@@ -41,7 +41,7 @@ options:
   region:
     description:
       - The target region.
-    choices: ['na', 'eu', 'au', 'af', 'ap', 'latam', 'canada', 'canberra', 'id', 'in', 'il', 'sa']
+    choices: %s
     default: na
   location:
     description:
@@ -202,9 +202,7 @@ def delete_network(module, driver, matched_network, mcp_version):
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            region=dict(default='na', choices=['na', 'eu', 'au', 'af', 'ap',
-                                               'latam', 'canada', 'canberra',
-                                               'id', 'in', 'il', 'sa']),
+            region=dict(default='na', choices=dd_regions),
             location=dict(required=True, type='str'),
             name=dict(required=True, type='str'),
             description=dict(required=False, type='str'),
@@ -267,4 +265,5 @@ def main():
         fail_json(msg="Requested state was " +
                   "'%s'. State must be 'absent' or 'failed'" % state)
 
-main()
+if __name__ == '__main__':
+    main()
