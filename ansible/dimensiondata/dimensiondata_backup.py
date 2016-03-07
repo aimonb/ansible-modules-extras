@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
 from ansible.module_utils.basic import *
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
 from ansible.module_utils.dimensiondata import *
+=======
+from ansible.module_utils.dimensiondatacloud import *
+>>>>>>> Fixes from review comments
 try:
     from libcloud.common.dimensiondata import DimensionDataAPIException
     from libcloud.backup.drivers.dimensiondata import DimensionDataBackupDriver
@@ -11,9 +15,12 @@ except:
     HAS_LIBCLOUD = False
 import time
 
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
 # Get regions early to use in docs etc.
 dd_regions = get_dd_regions()
 
+=======
+>>>>>>> Fixes from review comments
 DOCUMENTATION = '''
 ---
 module: dimensiondata_backup
@@ -38,7 +45,12 @@ options:
   region:
     description:
       - The target region.
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
     choices: %s
+=======
+    choices: ['na', 'eu', 'au', 'af', 'ap', 'latam', 'canada',
+              'canberra', 'id', 'in', 'il', 'sa']
+>>>>>>> Fixes from review comments
     default: na
   service_plan:
     description:
@@ -108,6 +120,10 @@ servers:
     contains: node_ids processed
 '''
 
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
+=======
+POLLING_INTERVAL = 2
+>>>>>>> Fixes from review comments
 
 def handle_backups(module, client):
     changed = False
@@ -154,8 +170,12 @@ def enable_backup_for_server(client, module, server_id, service_plan):
         try:
             client.connection.wait_for_state(
                 'NORMAL', client.ex_get_backup_details_for_target,
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
                 module.params['wait_poll_interval'],
                 module.params['wait_time'], server_id
+=======
+                POLLING_INTERVAL, module.params['wait_time'], server_id
+>>>>>>> Fixes from review comments
             )
         except DimensionDataAPIException as e:
             module.fail_json(msg='Backup did not enable in time: %s' % e.msg)

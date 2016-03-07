@@ -1,6 +1,10 @@
 #!/usr/bin/python
 from ansible.module_utils.basic import *
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
 from ansible.module_utils.dimensiondata import *
+=======
+from ansible.module_utils.dimensiondatacloud import *
+>>>>>>> Fixes from review comments
 try:
     from libcloud.common.dimensiondata import DimensionDataAPIException
     from libcloud.backup.drivers.dimensiondata import DimensionDataBackupDriver
@@ -9,9 +13,12 @@ try:
 except:
     HAS_LIBCLOUD = False
 
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
 # Get regions early to use in docs etc.
 dd_regions = get_dd_regions()
 
+=======
+>>>>>>> Fixes from review comments
 DOCUMENTATION = '''
 ---
 module: dimensiondata_backup
@@ -35,7 +42,12 @@ options:
   region:
     description:
       - The target region.
+<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
     choices: %s
+=======
+    choices: ['na', 'eu', 'au', 'af', 'ap', 'latam', 'canada',
+              'canberra', 'id', 'in', 'il', 'sa']
+>>>>>>> Fixes from review comments
     default: na
   client_type:
     description:
