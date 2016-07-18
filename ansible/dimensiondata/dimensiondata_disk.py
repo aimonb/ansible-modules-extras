@@ -28,17 +28,23 @@ options:
     required: false
     default: present
     aliases: []
-    choices: ['present', 'absent']
+    choices: [present, absent]
   node_ids:
     description:
       - A list of server ids to work on.
     required: false
     default: null
-    aliases: ['server_id', 'server_ids', 'node_id']
+    aliases: [server_id, server_ids, node_id]
   region:
     description:
       - The target region.
-    choices: %s
+    choices:
+      - Regions are defined in Apache libcloud project
+        - file = libcloud/common/dimensiondata.py 
+      - See https://libcloud.readthedocs.io/en/latest/
+        - ..    compute/drivers/dimensiondata.html
+      - Note that values avail in array dd_regions(). 
+      - Note that the default value of na = "North America"
     default: na
   speed:
     description:
@@ -48,7 +54,7 @@ options:
   size:
     description:
       - The size of the disk in GB
-      required: false
+    required: false
   scsi_id:
     description:
       - The scsi_id for the disk.  Which slot the disk should be in.
@@ -66,7 +72,7 @@ options:
   wait_timeout:
     description:
       - Only applicable if wait is true.
-        This is the amount of time in seconds to wait
+      - This is the amount of time in seconds to wait
     required: false
     default: 300
   wait_poll_interval:
@@ -77,7 +83,7 @@ options:
 
 author:
     - "Jeff Dunham (@jadunham1)"
-''' % str(dd_regions)
+'''
 
 EXAMPLES = '''
 # Note: These examples don't include authorization.
