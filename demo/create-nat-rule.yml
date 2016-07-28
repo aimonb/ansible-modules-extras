@@ -3,10 +3,10 @@
   connection: local
   tasks:
     - name: Create NAT rule
-      dimensiondata_nat_rule:
+      dimensiondata_nat:
         region: na
         location: NA12
         network_domain: ansible-capabilities-demo
-        internal_ip: 10.1.1.10
+        internal_ip: 10.1.1.5
         external_ip: 168.128.29.125
         ensure: present

@@ -71,6 +71,7 @@ options:
   external_ip:
     description:
         - The public/external IPv4 address.
+        - This IP must exist already in your domain.
     required: false
     default: null
   provision_external_ip:
@@ -152,12 +153,14 @@ def nat_obj_to_dict(nat_obj):
             'internal_ip': nat_obj.internal_ip, 'status': nat_obj.status}
 
 
-def check_out_of_range(net_domain, res):
-    if res == 'IP_ADDRESS_OUT_OF_RANGE':
-        module.fail_json("One or more of supplied IP address" +
-                         "is not associated with" +
-                         " domain %s." % net_domain.id +
-                         "Error: %s" % res)
+def check_out_of_range(module, compute_driver, lb_driver, domain, ip):
+    res = get_unallocated_public_ips(module, compute_driver, lb_driver, domain,
+                                     reuse_free=True, count=0)
+
+    if ip not in res['addresses']:
+        module.fail_json(msg="IP address '%s'" % ip +
+                         " is not associated with" +
+                         " domain %s." % domain.id)
 
 
 def main():
@@ -220,14 +223,15 @@ def main():
                                                  net_domain, True, 1)
                 ext_ip = res['addresses'][0]
             else:
+                # Verify that provided IP exists.
+                check_out_of_range(module, client, lb_client, net_domain,
+                                   external_ip)
                 ext_ip = external_ip
             try:
                 res = client.ex_create_nat_rule(net_domain, internal_ip,
                                                 ext_ip)
             except DimensionDataAPIException as e:
                 module.fail_json(msg="Unexpected API error: %s" % e)
-            # Exit with error if IP address out of range
-            check_out_of_range(net_domain, res)
             # Sucess
             module.exit_json(changed=True, msg="Success.",
                              nat_rule=nat_obj_to_dict(res))
