@@ -27,7 +27,6 @@ try:
     from libcloud.compute.types import Provider as ComputeProvider
     from libcloud.loadbalancer.providers import get_driver as get_lb_driver
     from libcloud.compute.providers import get_driver as get_cp_driver
-    from libcloud.loadbalancer.base import Member, Algorithm
     import libcloud.security
     HAS_LIBCLOUD = True
 except:
@@ -44,10 +43,10 @@ lb_algs = ['ROUND_ROBIN', 'LEAST_CONNECTIONS',
 
 DOCUMENTATION = '''
 ---
-module: dimensiondata_load_balancer
+module: dimensiondata_locad_balancer_pool
 description:
-  - Create, update or delete load balancers.
-short_description: Create, update or delete load balancers.
+  - Create, update or delete .
+short_description: Create, update or delete load balancer pools.
 version_added: 2.1
 author: 'Aimon Bustardo (@aimonb)'
 options:
@@ -72,41 +71,46 @@ options:
     required: true
   name:
     description:
-      - Name of the Load Balancer.
+      - Name of the Load Balancer Pool.
     required: true
-  port:
+  description:
     description:
-        - An integer in the range of 1-65535.
-        - If not supplied, it will be taken to mean "Any Port"
+      - Description of the Load Balancer Pool.
     required: false
-    default: None
-  listener_ip_address:
+    default: null
+  load_balance_method:
     description:
-        - Must be a valid IPv4 in dot-decimal notation (x.x.x.x).
-    required: true
-    default: None
-  provision_listener_ip_address:
-    description:
-      - Auto allocates a public IP address.
-    required: true
-    defauilt: true
-  protocol:
-    description:
-        - Choice of an enumeration of protocols
-    required: false
-    choices: [any, tcp, udp, http, ftp, smtp]
-    default: http
-  algorithm:
-    description:
-        - Choice of an enumerations of algorithms
-    required: false
-    choices: [ROUND_ROBIN, LEAST_CONNECTIONS, SHORTEST_RESPONSE, PERSISTENT_IP]
+        - The load balancer algorithm (required).
+    required: False
+    choices:
+        - 'ROUND_ROBIN'
+        - 'LEAST_CONNECTIONS'
+        - 'SHORTES_RESPONSE'
+        - 'PERSISTENT_IP'
     default: ROUND_ROBIN
-  members:
+  health_monitor_1:
     description:
-      - List of members as dictionaries.
-      - See Examples for format.
-    required: true
+        - Health monitor 1.
+    required: false
+    default: null
+    choices: ['Http', 'Https', 'Tcp', 'TcpHalfOpen', 'Udp']
+  health_monitor_2:
+    description:
+        - Health monitor 2.
+    required: false
+    default: null
+    choices: ['Http', 'Https', 'Tcp', 'TcpHalfOpen', 'Udp']
+  service_down_action:
+    description:
+      -  What to do when node is unavailable NONE, DROP or RESELECT.
+    required: false
+    choices: ['NONE', 'DROP', 'RESELECT']
+    default: 'NONE'
+  slow_ramp_time:
+    description:
+        - Number of seconds to stagger ramp up of nodes.
+    required: false
+    default: 30
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
@@ -115,119 +119,144 @@ options:
   ensure:
     description:
       - present, absent.
-    choices: [present, absent]
+    choices: ['present', 'absent']
     default: present
 '''
 
 
 EXAMPLES = '''
-# Construct Load Balancer
-- dimensiondata_load_balancer:
+# Construct Load Balancer Pool
+- dimensiondata_load_balancer_pool:
     region: na
     location: NA5
     network_domain: test_network
-    name: web_lb01
-    port: 80
-    protocol: http
-    algorithm: ROUND_ROBIN
-    members:
-        - name: webserver1
-          port: 8080
-          ip: 192.160.0.11
-        - name: webserver3
-          port: 8080
-          ip: 192.160.0.13
+    name: web_lb01_pool01
+    load_balance_method: ROUND_ROBIN
     ensure: present
 '''
 
+
 RETURN = '''
-load_balancer:
-    description: Dictionary describing the Load Balancer.
+load_balancer_pool:
+    description: Dictionary describing the Load Balancer Pool.
     returned: On success when I(ensure) is 'present'
     type: dictionary
     contains:
         id:
-            description: Load Balancer ID.
+            description: Load Balancer Pool ID.
             type: string
             sample: "aaaaa000-a000-4050-a215-2808934ccccc"
         name:
-            description: Virtual Listener name.
+            description: Pool name.
             type: string
-            sample: "My Virtual Listener"
-        ensure:
-            description: Virtual Listener ensure.
-            type: integer
-            sample: 0
-        ip:
-            description: Listen VIP of Load Balancer.
+            sample: "lb01_pool01"
+        load_balance_method:
+            description: Member load balancing method.
             type: string
-            sample: 168.128.1.1
-        port:
-            description: Port of Load Balancer listener.
+            sample: ROUND_ROBIN
+        slow_ramp_time:
+            description: Number of seconds to stagger ramp up of nodes.
             type: integer
-            sample: 80
+            sample: 30
+        service_down_action:
+            description: What to do when node is unavailable.
+            type: string
+            sample: RESELECT
+        health_monitor_id:
+            description: ID of chosen health monitor.
+            type: string
+            example: None
+        status:
+            description: Load balancer pool status.
+            type: integer
+            sample: NORMAL
 '''
 
 
-def get_balancer(module, lb_driver, name):
-    if is_uuid(name):
+def list_pools(module, lb_driver):
+    try:
+        pools = lb_driver.ex_get_pools()
+        return pools
+    except DimensionDataAPIException as e:
+        module.fail_json(msg="Failed to retrieve a list of pools: %s" % e)
+
+
+def get_pool(module, lb_driver):
+    if is_uuid(module.params['name']):
         try:
-            return lb_driver.get_balancer(name)
+            return lb_driver.get_pool(module.params['name'])
         except DimensionDataAPIException as e:
             if e.code == 'RESOURCE_NOT_FOUND':
                 return False
             else:
                 module.fail_json("Unexpected API error code: %s" % e.code)
     else:
-        balancers = list_balancers(module, lb_driver)
-        found_balancers = filter(lambda x: x.name == name, balancers)
-        if len(found_balancers) > 0:
-            lb_id = found_balancers[0].id
+        pools = list_pools(module, lb_driver)
+        found_pools = filter(lambda x: x.name == module.params['name'], pools)
+        if len(found_pools) > 0:
+            pool_id = found_pools[0].id
             try:
-                return lb_driver.get_balancer(lb_id)
+                return lb_driver.ex_get_pool(pool_id)
             except DimensionDataAPIException as e:
                 module.fail_json(msg="Unexpected error while retrieving load" +
-                                 " balancer details with id %s" % lb_id)
+                                 " balancer pool details with id" +
+                                 " %s" % pool_id)
         else:
             return False
 
 
-def balancer_obj_to_dict(lb_obj):
+def pool_obj_to_dict(pool_obj):
     return {
-        'id': lb_obj.id,
-        'name': lb_obj.name,
-        'state': int(lb_obj.state),
-        'ip': lb_obj.ip,
-        'port': 'Any Port' if lb_obj.port is None else int(lb_obj.port)
+        'id': pool_obj.id,
+        'name': pool_obj.name,
+        'description': pool_obj.description,
+        'status': pool_obj.status,
+        'load_balance_method': pool_obj.load_balance_method,
+        'slow_ramp_time': pool_obj.slow_ramp_time,
+        'service_down_action': pool_obj.service_down_action,
+        'health_monitor_id': pool_obj.health_monitor_id
     }
 
 
-def create_balancer(module, lb_driver, cp_driver, network_domain):
-    # Build mebers list
-    members_list = [Member(m['name'], m['ip'], m.get('port'))
-                    for m in module.params['members']]
-    if module.params['provision_listener_ip_address'] is True:
-        # Get addresses
-        res = get_unallocated_public_ips(module, cp_driver, lb_driver,
-                                         network_domain, True, 1)
-        listener_ip_address = res['addresses'][0]
-    else:
-        listener_ip_address = module.params['listener_ip_address']
+def to_health_monitor(module, domain_id, lb_driver, monitor_txt):
+    mon_string = 'CCDEFAULT.%s' % monitor_txt
     try:
-        balancer = lb_driver.create_balancer(
-            module.params['name'],
-            module.params['port'],
-            module.params['protocol'],
-            getattr(Algorithm, module.params['algorithm']),
-            members_list,
-            ex_listener_ip_address=listener_ip_address)
-        module.exit_json(changed=True, msg="Success.",
-                         load_balancer=balancer_obj_to_dict(balancer))
+        monitors = lb_driver.ex_get_default_health_monitors(domain_id)
+        monitor_list = filter(lambda x: x.name == mon_string, monitors)
+        if len(monitor_list) > 0:
+            return monitor_list[0]
+        else:
+            module.fail_json(msg="Health monitor '%s' not found." % mon_string)
     except DimensionDataAPIException as e:
-        module.fail_json(msg="Error while creating load balancer: %s" % e)
+        module.fail_json(msg='Failed to get monitor list: %s' % e)
+
+
+def create_pool(module, lb_driver, domain_id):
+    # Build monitors
+    monitors = [to_health_monitor(module, domain_id, lb_driver,
+                module.params['health_monitor_1']),
+                to_health_monitor(module, domain_id, lb_driver,
+                module.params['health_monitor_2'])
+                ]
+    try:
+        pool = lb_driver.ex_create_pool(domain_id, module.params['name'],
+                                        module.params['load_balance_method'],
+                                        module.params['description'],
+                                        monitors,
+                                        module.params['service_down_action'],
+                                        module.params['slow_ramp_time'])
+        module.exit_json(changed=True, msg="Success.",
+                         load_balancer_pool=pool_obj_to_dict(pool))
+    except DimensionDataAPIException as e:
+        module.fail_json(msg="Error while creating load balancer pool: %s" % e)
 
 
 def main():
+
+    monitor_methods = ['Http', 'Https', 'Tcp', 'TcpHalfOpen', 'Udp']
+    down_actions = ['DROP', 'RESELECT', 'NONE']
+    lb_methods = ['ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SHORTEST_RESPONSE',
+                  'PERSISTENT_IP']
     module = AnsibleModule(
         argument_spec=dict(
             region=dict(default='na', choices=dd_regions),
@@ -235,18 +264,15 @@ def main():
             network_domain=dict(required=True, type='str'),
             name=dict(required=True, type='str'),
             description=dict(default=None, type='str'),
-            port=dict(default=None, type='int'),
-            protocol=dict(default='http', choices=protocols),
-            algorithm=dict(default='ROUND_ROBIN', choices=lb_algs),
-            members=dict(default=None, type='list'),
+            load_balance_method=dict(default='ROUND_ROBIN',
+                                     choices=lb_methods),
+            health_monitor_1=dict(default=None, choices=monitor_methods),
+            health_monitor_2=dict(default=None, choices=monitor_methods),
+            service_down_action=dict(default=None, choices=down_actions),
+            slow_ramp_time=dict(required=False, default=30, type='int'),
             ensure=dict(default='present', choices=['present', 'absent']),
             verify_ssl_cert=dict(required=False, default=True, type='bool'),
-            listener_ip_address=dict(required=False, default=None, type='str'),
-            provision_listener_ip_address=dict(required=False, default=True,
-                                               type='bool')
         ),
-        mutually_exclusive=(["listener_ip_address",
-                             "provision_listener_ip_address"])
     )
 
     if not HAS_LIBCLOUD:
@@ -261,7 +287,6 @@ def main():
     region = 'dd-%s' % module.params['region']
     location = module.params['location']
     network_domain = module.params['network_domain']
-    name = module.params['name']
     verify_ssl_cert = module.params['verify_ssl_cert']
     ensure = module.params['ensure']
 
@@ -288,26 +313,24 @@ def main():
         module.fail_json(msg="Current network domain could not be set.")
 
     # Process action
+    pool = get_pool(module, lb_driver)
     if ensure == 'present':
-        balancer = get_balancer(module, lb_driver, name)
-        if balancer is False:
-            create_balancer(module, lb_driver, cp_driver, net_domain)
+        if pool is False:
+            create_pool(module, lb_driver, net_domain.id)
         else:
-            module.exit_json(changed=False, msg="Load balancer already " +
-                             "exists.", load_balancer=balancer_obj_to_dict(
-                                 balancer))
+            module.exit_json(changed=False, msg="Load balancer pool already " +
+                             "exists.", load_balancer_pool=pool_obj_to_dict(pool))
     elif ensure == 'absent':
-        balancer = get_balancer(module, lb_driver, name)
-        if balancer is False:
-            module.exit_json(changed=False, msg="Load balancer with name " +
-                             "%s does not exist" % name)
+        if pool is False:
+            module.exit_json(changed=False, msg="Load balancer pool with " +
+                             "name %s does not exist" % module.params['name'])
         try:
-            res = lb_driver.destroy_balancer(balancer)
-            module.exit_json(changed=True, msg="Load balancer deleted. " +
+            res = lb_driver.ex_destroy_pool(pool)
+            module.exit_json(changed=True, msg="Load balancer pool deleted. " +
                              "Status: %s" % res)
         except DimensionDataAPIException as e:
             module.fail_json(msg="Unexpected error when attempting to delete" +
-                             " load balancer: %s" % e)
+                             " load balancer pool: %s" % e)
     else:
         fail_json(msg="Requested ensure was " +
                   "'%s'. Status must be one of 'present', 'absent'." % ensure)

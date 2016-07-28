@@ -306,7 +306,7 @@ def get_blocks_with_unallocated(module, cp_driver, lb_driver, network_domain):
 # Get and/or provision unallocated public IPs
 # -------------------------------------------
 def get_unallocated_public_ips(module, cp_driver, lb_driver, network_domain,
-                               reuse_free, count):
+                               reuse_free, count=0):
     free_ips = []
     if reuse_free is True:
         blocks_with_unallocated = get_blocks_with_unallocated(module,
@@ -329,4 +329,4 @@ def get_unallocated_public_ips(module, cp_driver, lb_driver, network_domain,
                 'addresses': free_ips[:count]}
     else:
         return {'changed': False, 'msg': 'Found enough unallocated IPs' +
-                'without provisioning.', 'addresses': free_ips[:count]}
+                ' without provisioning.', 'addresses': free_ips}
