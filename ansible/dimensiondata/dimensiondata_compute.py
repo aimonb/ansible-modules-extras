@@ -27,10 +27,10 @@ options:
       - The target region.
     choices:
       - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py 
+        - file = libcloud/common/dimensiondata.py
       - See https://libcloud.readthedocs.io/en/latest/
         - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions(). 
+      - Note that values avail in array dd_regions().
       - Note that the default value of na = "North America"
     default: na
   ensure:
@@ -363,9 +363,9 @@ def create_node(client, module, name, wait):
         pri_vlan = module.params['vlans'][0]
         vlan = get_vlan(client, pri_vlan, location, network_domain)
         if not vlan:
-            module.fail_json(msg="VLAN ID %s not found in location %s, " +
+            module.fail_json(msg="VLAN ID %s not found in location %s, "
                              "network domain %s" % (pri_vlan, location,
-                                                    network_domain))
+                                                    network_domain.id))
         if len(module.params['vlans']) > 1:
             add_vlans = []
             for v in module.params['vlans'][1:]:
