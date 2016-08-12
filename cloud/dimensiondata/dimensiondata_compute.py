@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!pt/bin/python
 from ansible.module_utils.basic import *
 from ansible.module_utils.dimensiondata import *
 
@@ -601,11 +601,11 @@ def main():
 
     try:
         core(module)
-    except (InvalidCredsError), e:
+    except (InvalidCredsError) as e:
         module.fail_json(msg="Invalid Credentials Error: please check the "
                          "Dimension Data Cloud credentials you provided then "
                          "try again.")
-    except (Exception), e:
+    except (Exception) as e:
         module.fail_json(msg=str(e))
 
 
