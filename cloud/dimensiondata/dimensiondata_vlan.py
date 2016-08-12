@@ -44,7 +44,17 @@ options:
   region:
     description:
       - The target region.
+<<<<<<< fed22f85029ee5ffb0f62a2ef413a58183019d34:ansible/dimensiondata/dimensiondata_vlan.py
     choices: %s
+=======
+    choices:
+      - Regions are defined in Apache libcloud project
+        - file = libcloud/common/dimensiondata.py
+      - See https://libcloud.readthedocs.io/en/latest/
+        - ..    compute/drivers/dimensiondata.html
+      - Note that values avail in array dd_regions().
+      - Note that the default value of na = "North America"
+>>>>>>> Move to fit in ansible-modules-extras:cloud/dimensiondata/dimensiondata_vlan.py
     default: na
   location:
     description:

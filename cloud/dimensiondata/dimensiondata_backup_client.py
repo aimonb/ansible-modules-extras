@@ -42,12 +42,22 @@ options:
   region:
     description:
       - The target region.
+<<<<<<< fed22f85029ee5ffb0f62a2ef413a58183019d34:ansible/dimensiondata/dimensiondata_backup_client.py
 <<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
     choices: %s
 =======
     choices: ['na', 'eu', 'au', 'af', 'ap', 'latam', 'canada',
               'canberra', 'id', 'in', 'il', 'sa']
 >>>>>>> Fixes from review comments
+=======
+    choices:
+      - Regions are defined in Apache libcloud project
+        - file = libcloud/common/dimensiondata.py
+      - See https://libcloud.readthedocs.io/en/latest/
+        - ..    compute/drivers/dimensiondata.html
+      - Note that values avail in array dd_regions().
+      - Note that the default value of na = "North America"
+>>>>>>> Move to fit in ansible-modules-extras:cloud/dimensiondata/dimensiondata_backup_client.py
     default: na
   client_type:
     description:
