@@ -114,7 +114,7 @@ options:
   members:
     description:
       - Nested dictionaries of pool members name ip and port.
-      - In format of {<name>: {'ip': <ip>, 'port': <port>}, ...}
+      - "In format of {<name>: {'ip': <ip>, 'port': <port>}, ...}"
     required: false
     default: null
   destroy_nodes:
