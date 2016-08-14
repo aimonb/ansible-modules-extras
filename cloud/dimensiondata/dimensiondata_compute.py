@@ -246,6 +246,18 @@ EXAMPLES = '''
     operate_on_multiple: true
 '''
 
+RETURN = '''
+nodes:
+    -
+        id: 7D59BC28-0322-4374-A409-B28ED80424D3
+        name: my_node
+        ipv6: ''
+        os_type: linux
+        private_ipv4: 10.0.0.4
+        public_ipv4: ''
+        location: na12
+        state: running
+'''
 from ansible.module_utils.basic import *
 from ansible.module_utils.dimensiondata import *
 HAS_LIBCLOUD = True
