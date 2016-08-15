@@ -47,7 +47,7 @@ module: dimensiondata_locad_balancer_pool
 description:
   - Create, update or delete .
 short_description: Create, update or delete load balancer pools.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

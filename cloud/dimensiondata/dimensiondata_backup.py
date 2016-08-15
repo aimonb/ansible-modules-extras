@@ -24,7 +24,7 @@ module: dimensiondata_backup
 short_description: Enable or Disable backups for a host.
 description:
   - Creates, enables/disables backups for a host in the Dimension Data Cloud.
-version_added: "1.9"
+version_added: "2.2"
 options:
   state:
     description:

@@ -45,7 +45,7 @@ short_description: Create, update, and delete MCP 2.0 firewall rules.
 description:
     - Create, update, and delete MCP 2.0 firewall rules.
     - Requires MCP 2.0.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

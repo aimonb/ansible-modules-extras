@@ -48,7 +48,7 @@ module: dimensiondata_load_balancer
 description:
   - Create, update or delete load balancers.
 short_description: Create, update or delete load balancers.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

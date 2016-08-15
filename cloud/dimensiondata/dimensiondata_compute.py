@@ -24,7 +24,7 @@ module: dimensiondata_compute
 short_description: create, terminate, start or stop an server in dimensiondata
 description:
     - Creates, terminates, starts or stops servers in the Dimension Data Cloud
-version_added: "1.9"
+version_added: "2.2"
 options:
   region:
     description:

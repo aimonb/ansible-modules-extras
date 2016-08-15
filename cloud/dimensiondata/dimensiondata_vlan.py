@@ -39,7 +39,7 @@ module: dimensiondata_vlan
 short_description: Create, Read, Update or Delete VLANs.
 description:
   - Create, Read, Update or Delete VLANs.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

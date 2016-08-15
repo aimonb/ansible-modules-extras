@@ -40,7 +40,7 @@ short_description: Get specified number of free addresses.
 description: 
   - Get specified number of free addresses.
   - Provision to reach requested number.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

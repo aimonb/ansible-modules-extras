@@ -39,7 +39,7 @@ module: dimensiondata_network
 short_description: Create, update, and delete MCP 1.0 & 2.0 networks
 description:
   - Create, update, and delete MCP 1.0 & 2.0 networks
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:
