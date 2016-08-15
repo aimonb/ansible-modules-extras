@@ -25,7 +25,7 @@ module: dimensiondata_backup
 short_description: add/delete backup client for a host
 description:
     - Add or delete a backup client for a host in the Dimension Data Cloud
-version_added: "1.9"
+version_added: "2.2"
 options:
   state:
     description:

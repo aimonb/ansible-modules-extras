@@ -42,7 +42,7 @@ module: dimensiondata_nat
 short_description: Create, List, Get or Delete NAT rules.
 description:
   - Create, List, Get or Delete NAT rules.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:

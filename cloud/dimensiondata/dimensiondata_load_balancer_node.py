@@ -41,7 +41,7 @@ module: dimensiondata_load_balancer_node
 description:
   - Create, update or delete a Load Balancer Node.
 short_description: Create, update or delete load balancer nodes.
-version_added: 2.1
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:
