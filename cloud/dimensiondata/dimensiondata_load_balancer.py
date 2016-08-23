@@ -89,7 +89,7 @@ options:
     description:
       - Auto allocates a public IP address.
     required: true
-    defauilt: true
+    default: true
   protocol:
     description:
         - Choice of an enumeration of protocols
@@ -133,10 +133,10 @@ EXAMPLES = '''
     members:
         - name: webserver1
           port: 8080
-          ip: 192.160.0.11
+          ip: 192.168.0.11
         - name: webserver3
           port: 8080
-          ip: 192.160.0.13
+          ip: 192.168.0.13
     ensure: present
 '''
 
