@@ -83,13 +83,9 @@ options:
   listener_ip_address:
     description:
         - Must be a valid IPv4 in dot-decimal notation (x.x.x.x).
-    required: true
+        - If not provided (or == ""), value will be auto-provisioned
+    required: false
     default: None
-  provision_listener_ip_address:
-    description:
-      - Auto allocates a public IP address.
-    required: true
-    default: true
   protocol:
     description:
         - Choice of an enumeration of protocols
@@ -206,13 +202,14 @@ def create_balancer(module, lb_driver, cp_driver, network_domain):
     # Build mebers list
     members_list = [Member(m['name'], m['ip'], m.get('port'))
                     for m in module.params['members']]
-    if module.params['provision_listener_ip_address'] is True:
+
+    listener_ip_address = module.params['listener_ip_address']
+    if not(listener_ip_address and listener_ip_address.strip()):
         # Get addresses
         res = get_unallocated_public_ips(module, cp_driver, lb_driver,
                                          network_domain, True, 1)
         listener_ip_address = res['addresses'][0]
-    else:
-        listener_ip_address = module.params['listener_ip_address']
+
     try:
         balancer = lb_driver.create_balancer(
             module.params['name'],
@@ -241,12 +238,8 @@ def main():
             members=dict(default=None, type='list'),
             ensure=dict(default='present', choices=['present', 'absent']),
             verify_ssl_cert=dict(required=False, default=True, type='bool'),
-            listener_ip_address=dict(required=False, default=None, type='str'),
-            provision_listener_ip_address=dict(required=False, default=True,
-                                               type='bool')
+            listener_ip_address=dict(required=False, default=None, type='str')
         ),
-        mutually_exclusive=(["listener_ip_address",
-                             "provision_listener_ip_address"])
     )
 
     if not HAS_LIBCLOUD:
