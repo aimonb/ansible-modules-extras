@@ -38,7 +38,7 @@ DOCUMENTATION = '''
 module: dimensiondata_vlan
 short_description: Create, Read, Update or Delete VLANs.
 description:
-  - Create, Read, Update or Delete VLANs.
+  - Create, Read, Update, Delete or Expand VLANs.
 version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
@@ -46,12 +46,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py 
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions(). 
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -59,7 +57,7 @@ options:
     required: true
   name:
     description:
-      - The name of the VLAN.
+      - The name of the VLAN, required for 'create' action
     required: false
   description:
     description:
@@ -80,7 +78,7 @@ options:
     required: false
   vlan_id:
     description:
-      - The VLAN ID, required for update action.
+      - The VLAN ID, required for 'update' and 'expand' action.
     required: false
   verify_ssl_cert:
     description:
@@ -105,7 +103,7 @@ options:
     default: 2
   action:
     description:
-      - create, read(get), update or delete.
+      - create, read(get), update, delete or expand.
     choices: [create, read, get, update, delete, expand]
     default: create
 '''
