@@ -24,6 +24,8 @@ module: dimensiondata_backup
 short_description: Enable or Disable backups for a host.
 description:
   - Creates, enables/disables backups for a host in the Dimension Data Cloud.
+notes:
+  - Does not support check-mode.
 version_added: "2.2"
 options:
   state:
@@ -31,24 +33,20 @@ options:
       - The state you want the hosts to be in.
     required: false
     default: present
-    aliases: []
     choices: [present, absent]
   node_ids:
     description:
       - A list of server ids to work on.
-    required: false
-    default: null
+    required: true
     aliases: [server_id, server_ids, node_id]
   region:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   service_plan:
     description:
@@ -73,7 +71,7 @@ options:
     default: 120
   wait_poll_interval:
     description:
-      - The amount to time inbetween polling for task completion
+      - The amount to time in between polling for task completion
     required: false
     default: 2
 
@@ -107,7 +105,7 @@ EXAMPLES = '''
     wait: yes
     wait_time: 500
     service_plan: Advanced
-    verify_Sssl_cert: no
+    verify_ssl_cert: no
 '''
 
 RETURN = '''

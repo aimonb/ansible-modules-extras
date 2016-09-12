@@ -24,6 +24,9 @@ module: dimensiondata_backup client
 short_description: add/delete backup client for a host
 description:
     - Add or delete a backup client for a host in the Dimension Data Cloud
+notes:
+    - If given state = 'present' and backup client is found, it is not
+    changed/edited.
 version_added: "2.2"
 options:
   state:
@@ -35,24 +38,23 @@ options:
   node_ids:
     description:
       - A list of server ids to work on
-    required: false
+    required: true
     default: null
     aliases: [server_id, server_ids, node_id]
   region:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   client_type:
     description:
       - The service plan for backups.
-    choices: [FA.AD, FA.Linux, FA.Win, PostgreSQL, MySQL]
+    required: true
+    choices: [FA.Win, FA.AD, FA.Linux, MySQL, PostgreSQL]
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
@@ -65,7 +67,13 @@ options:
   storage_policy:
     description:
       - The storage policy for backups.
-    choices: [14 Day Storage Policy, 30 Day Storage Policy, etc.]
+    required: true
+    choices: ['14 Day Storage Policy', '30 Day Storage Policy',
+              '60 Day Storage Policy', '90 Day Storage Policy',
+              '180 Day Storage Policy', '1 Year Storage Policy',
+              '2 Year Storage Policy', '3 Year Storage Policy',
+              '4 Year Storage Policy', '5 Year Storage Policy',
+              '6 Year Storage Policy', '7 Year Storage Policy']
   notify_email:
     description:
       - The email to notify for a trigger.
@@ -148,7 +156,7 @@ def _backup_client_obj_to_dict(backup_client):
     return backup_client_dict
 
 
-def get_backup_details_for_host(client, server_id):
+def get_backup_details_for_host(module, client, server_id):
     try:
         backup_details = client.ex_get_backup_details_for_target(server_id)
     except DimensionDataAPIException as e:
@@ -168,7 +176,7 @@ def handle_backup_client(module, client):
     server_clients_return = {}
 
     for server_id in module.params['node_ids']:
-        backup_details = get_backup_details_for_host(client, server_id)
+        backup_details = get_backup_details_for_host(module, client, server_id)
         backup_client = get_backup_client(backup_details, client_type)
         if state == 'absent' and backup_client is None:
             continue
@@ -178,11 +186,15 @@ def handle_backup_client(module, client):
         elif state == 'present' and backup_client is None:
             changed = True
             add_client_to_server(client, module, server_id)
-            backup_details = get_backup_details_for_host(client, server_id)
+            backup_details = get_backup_details_for_host(module, client, server_id)
             backup_client = get_backup_client(backup_details, client_type)
             server_clients_return[server_id] = \
                 _backup_client_obj_to_dict(backup_client)
         elif state == 'present' and backup_client is not None:
+            existing_service_plan = backup_details.sevice_plan
+            modify_backup_for_server(
+                client, module, server_id, existing_service_plan)
+            # needed? backup_details = get_backup_details_for_host(module, client, server_id)
             server_clients_return[server_id] = \
                 _backup_client_obj_to_dict(backup_client)
         else:
