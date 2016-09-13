@@ -31,24 +31,20 @@ options:
       - The state you want the hosts to be in.
     required: false
     default: present
-    aliases: []
     choices: [present, absent]
   node_ids:
     description:
       - A list of server ids to work on.
-    required: false
-    default: null
+    required: true
     aliases: [server_id, server_ids, node_id]
   region:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   speed:
     description:
@@ -81,7 +77,9 @@ options:
     default: 300
   wait_poll_interval:
     description:
-      - The amount to time inbetween polling for task completion
+      - Only applicable if wait is true
+      - The amount of time in between polling for task completion
+      - This value should be no greater than wait_timeout
     required: false
     default: 2
 
@@ -105,7 +103,7 @@ EXAMPLES = '''
     size: 40
     speed: ECONOMY
 
-# Modify a disk in slot 3 and wait for it to finish before returning success
+# Modify a disk in slot 3 and wait up to 10 minutes for it to finish before returning success
 
 - dimensiondata_disk:
     node_ids:
@@ -114,6 +112,8 @@ EXAMPLES = '''
     scsi_id: 3
     size: 45
     speed: HIGHSPEED
+    wait: true
+    wait_timeout: 600
 
 # Remove a disk in slot 3
 - dimensiondata_disk:
@@ -125,8 +125,8 @@ EXAMPLES = '''
 
 RETURN = '''
 servers:
-    description: List of servers this worked on.
-    returned: Always
+    description: the original List of servers/node_ids that were passed in
+    returned: On success
     type: list
     contains: node_ids processed
 '''
