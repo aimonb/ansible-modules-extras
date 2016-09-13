@@ -46,12 +46,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py 
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions(). 
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -65,7 +63,6 @@ options:
     description:
       - Additional description of the network domain.
     required: false
-    default: null
   service_plan:
     description:
       - The service plan, either “ESSENTIALS” or “ADVANCED”.
@@ -84,8 +81,7 @@ options:
     default: false
   wait_time:
     description:
-      - Only applicable if wait is true.
-        This is the amount of time in seconds to wait
+      - Only applicable if wait is true. This is the amount of time in seconds to wait
     required: false
     default: 600
   wait_poll_interval:
