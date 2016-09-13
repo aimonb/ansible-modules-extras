@@ -66,7 +66,7 @@ options:
     default: null
   network_domain:
     description:
-      - The target network.
+      - The network domain name of the target network.
     required: true
   private_ipv4_base_address:
     description:
@@ -333,7 +333,7 @@ def main():
     key = credentials['key']
     region = 'dd-%s' % module.params['region']
     location = module.params['location']
-    network_domain_id = module.params['network_domain']
+    network_domain_name = module.params['network_domain']
     name = module.params['name']
     vlan_id = module.params['vlan_id']
     description = module.params['description']
@@ -348,7 +348,7 @@ def main():
     driver = DimensionData(user_id, key, region=region)
 
     # Get Network Domain Object
-    network_domain = get_network_domain_by_name(driver, network_domain_id,
+    network_domain = get_network_domain_by_name(driver, network_domain_name,
                                                 location)
 
     # Process action
