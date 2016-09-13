@@ -39,9 +39,9 @@ dd_regions = get_dd_regions()
 DOCUMENTATION = '''
 ---
 module: dimensiondata_nat
-short_description: Create, List, Get or Delete NAT rules.
+short_description: Create or Delete NAT rules.
 description:
-  - Create, List, Get or Delete NAT rules.
+  - Create or Delete NAT rules.
 version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
@@ -49,12 +49,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -66,25 +64,27 @@ options:
     required: true
   internal_ip:
     description:
-        - The Internal IPv4 address.
+      - The Internal IPv4 address.
     required: true
   external_ip:
     description:
-        - The public/external IPv4 address.
-        - This IP must exist already in your domain.
+      - The public/external IPv4 address.
+      - This IP must exist already in your domain.
+      - Note that external_ip is mutually exclusive with provision_external_ip
     required: false
     default: null
   provision_external_ip:
     description:
       - Auto allocates a public IP address.
+      - Note that provision_external_ip is mutually exclusive with external_ip
     required: false
-    defauilt: true
+    default: true
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
-    required: true
+    required: false
     default: true
-  action:
+  ensure:
     description:
       - present, absent
     choices: [present, absent]
