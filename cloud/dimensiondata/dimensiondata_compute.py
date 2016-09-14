@@ -30,51 +30,42 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   ensure:
     description:
       - The state you want the hosts to be in.
-    required: false
     default: present
-    aliases: []
     choices: [present, absent, running, stopped]
   nodes:
     description:
       - A list of server ID or names to work on.
-    required: true
     default: null
-    aliases: [servers]
+    aliases: [server_id, server_ids, node_id]
   image:
     description:
       - The image name or ID to provision with.
-    required: true
     default: null
-    aliases: []
   vlans:
     description:
       - List of names or IDs of the VLANs to connect to.
       - They will be connected in order specified.
+      - Cannot have BOTH vlans and ipv4_addresses values present.
     required: false
-    default: null
-    aliases: []
+    default: None
   ipv4_addresses:
     description:
       - List of IPv4 addresses to connect.
       - Only one address per VLAN/Network is allowed.
     reqauired: false
-    default: null
-    aliases: []
+    default: None
   network_domain:
     description:
       - The name or ID of the network domain to provision to.
     required: true
-    default: null
     aliases: [network]
   location:
     description:
@@ -85,38 +76,32 @@ options:
       - The administrator account password for a new server.
     required: false
     default: null
-    aliases: []
   description:
     description:
       - The description for the new node.
     required: false
     default: null
-    aliases: []
   memory_gb:
     description:
       - The amount of memory for the new host to have in GB.
     required: false
     default: null
-    aliases: []
   primary_dns:
     description:
       - Primary DNS server IP or FQDN.
     required: false
-    default: null
-    aliases: []
+    default: None
   secondary_dns:
     description:
       - Secondary DNS server IP or FQDN.
     required: false
-    default: null
-    aliases: []
+    default: None
   unique_names:
     description:
       - By default Dimension Data allows the same name for multiple servers.
       - This will make sure we do not create a new server if the name already exists.
     required: false
     default: true
-    aliases: []
     choices: [true, false]
   operate_on_multiple:
     description:
@@ -125,7 +110,6 @@ options:
       - WARNING- This can be dangerous!!
     required: false
     default: false
-    aliases: []
     choices: [true, false]
   verify_ssl_cert:
     description:
@@ -144,7 +128,9 @@ options:
     default: 600
   wait_poll_interval:
     description:
-      - The amount to time inbetween polling for task completion.
+      - Only applicable if wait is true.
+      - The amount of time (in seconds) in between polling for task completion.
+      - Should obviously not be greater than wait_time.
     required: false
     default: 2
 
@@ -164,6 +150,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     image: 'RedHat 7 64-bit 2 CPU'
     nodes:
       - ansible-test-image
@@ -173,6 +160,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     ensure: running
     nodes:
       - my_node_1
@@ -183,6 +171,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     ensure: stopped
     nodes:
       - my_node_1
@@ -193,6 +182,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     ensure: absent
     nodes:
       - my_node_1
@@ -207,6 +197,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     image: 'RedHat 7 64-bit 2 CPU'
     nodes:
       - ansible-test-image1
@@ -223,6 +214,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     nodes:
       - ansible-test-image1
       - ansible-test-image2
@@ -236,6 +228,7 @@ EXAMPLES = '''
 - dimensiondata_compute:
     vlan: '{{ vlan }}'
     network_domain: '{{ network_domain_id }}'
+    location: '{{ location }}'
     nodes:
       - ansible-test-image1
       - ansible-test-image2
@@ -245,18 +238,49 @@ EXAMPLES = '''
     unique_names: false
     operate_on_multiple: true
 '''
-
+ 
 RETURN = '''
 nodes:
-    -
-        id: 7D59BC28-0322-4374-A409-B28ED80424D3
-        name: my_node
-        ipv6: ''
-        os_type: linux
-        private_ipv4: 10.0.0.4
-        public_ipv4: ''
-        location: na12
-        state: running
+    description: List of quiesced nodes
+    returned: On success.
+    type: list
+    contains:
+        id:
+            description: node ID.
+            type: string
+            sample: "7D59BC28-0322-4374-A409-B28ED80424D3"
+        name:
+            description: node name.
+            type: string
+            sample: "My Node"
+        ipv6:
+            description: the ipv6 address (if it has been assigned)
+            type: string
+            sample: ''
+        os-type:
+            description: type of the os running on the node
+            type: string
+            sample: linux
+        private_ipv4:
+            description: the ipv4 private address
+            type: string
+            sample: 192.168.1.1
+        public_ipv4:
+            description: the ipv4 public address
+            type: string
+            sample: 10.0.0.4
+        location:
+            description: name of the datacenter
+            type: string
+            sample: na12
+        state:
+            description: server/node state
+            type: string
+            sample: "running"
+        password:
+            description: only returned if admin_password was not provided
+            type: string
+            sample: somethingOrAnother23
 '''
 from ansible.module_utils.basic import *
 from ansible.module_utils.dimensiondata import *

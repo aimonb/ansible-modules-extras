@@ -55,12 +55,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -68,8 +66,9 @@ options:
     required: true
   network_domain:
     description:
-      - The target network name or ID.
+      - The target network name or UUID/ID for the network.
     required: true
+    default: None
   name:
     description:
       - Name of the Load Balancer.
@@ -150,16 +149,16 @@ load_balancer:
             description: Virtual Listener name.
             type: string
             sample: "My Virtual Listener"
-        ensure:
-            description: Virtual Listener ensure.
+        state:
+            description: state of the Load Balancer
             type: integer
-            sample: 0
+            sample: 0=RUNNING,  1=PENDING, 2=UNKNOWN, 3=ERROR, 4=DELETED
         ip:
-            description: Listen VIP of Load Balancer.
+            description: Listener IP of Load Balancer.
             type: string
             sample: 168.128.1.1
         port:
-            description: Port of Load Balancer listener.
+            description: Port of Load Balancer listener (if port was supplied; else = 'Any Port')
             type: integer
             sample: 80
 '''
@@ -231,7 +230,6 @@ def main():
             location=dict(required=True, type='str'),
             network_domain=dict(required=True, type='str'),
             name=dict(required=True, type='str'),
-            description=dict(default=None, type='str'),
             port=dict(default=None, type='int'),
             protocol=dict(default='http', choices=protocols),
             algorithm=dict(default='ROUND_ROBIN', choices=lb_algs),
