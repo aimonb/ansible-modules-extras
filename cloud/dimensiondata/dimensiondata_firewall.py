@@ -52,12 +52,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -84,7 +82,7 @@ options:
       - Action to take when rule matched.
       - ACCEPT_DECISIVELY or DROP
     choices: [ACCEPT_DECISIVELY, DROP]
-    default: Accept
+    default: ACCEPT_DECISIVELY
   ip_version:
     description:
       - IPv4 or IPv6.
@@ -116,16 +114,16 @@ options:
     description:
       - Placement of rule in relation to others.
       - One of FIRST, LAST, BEFORE, AFTER.
-    default: last
+    default: LAST
   relative_to_rule:
     description:
       - BEFORE or AFTER this rule.
       - Required when position is BEFORE or AFTER.
-    default: false
+    default: None
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
-    default: true
+    default: True
 '''
 
 EXAMPLES = '''

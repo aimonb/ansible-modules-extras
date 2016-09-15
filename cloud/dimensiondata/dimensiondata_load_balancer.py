@@ -55,12 +55,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -68,8 +66,9 @@ options:
     required: true
   network_domain:
     description:
-      - The target network name or ID.
+      - The target network name or UUID/ID for the network.
     required: true
+    default: None
   name:
     description:
       - Name of the Load Balancer.
@@ -83,13 +82,9 @@ options:
   listener_ip_address:
     description:
         - Must be a valid IPv4 in dot-decimal notation (x.x.x.x).
-    required: true
+        - If not provided (or == ""), value will be auto-provisioned
+    required: false
     default: None
-  provision_listener_ip_address:
-    description:
-      - Auto allocates a public IP address.
-    required: true
-    defauilt: true
   protocol:
     description:
         - Choice of an enumeration of protocols
@@ -133,10 +128,10 @@ EXAMPLES = '''
     members:
         - name: webserver1
           port: 8080
-          ip: 192.160.0.11
+          ip: 192.168.0.11
         - name: webserver3
           port: 8080
-          ip: 192.160.0.13
+          ip: 192.168.0.13
     ensure: present
 '''
 
@@ -154,16 +149,16 @@ load_balancer:
             description: Virtual Listener name.
             type: string
             sample: "My Virtual Listener"
-        ensure:
-            description: Virtual Listener ensure.
+        state:
+            description: state of the Load Balancer
             type: integer
-            sample: 0
+            sample: 0=RUNNING,  1=PENDING, 2=UNKNOWN, 3=ERROR, 4=DELETED
         ip:
-            description: Listen VIP of Load Balancer.
+            description: Listener IP of Load Balancer.
             type: string
             sample: 168.128.1.1
         port:
-            description: Port of Load Balancer listener.
+            description: Port of Load Balancer listener (if port was supplied; else = 'Any Port')
             type: integer
             sample: 80
 '''
@@ -206,13 +201,14 @@ def create_balancer(module, lb_driver, cp_driver, network_domain):
     # Build mebers list
     members_list = [Member(m['name'], m['ip'], m.get('port'))
                     for m in module.params['members']]
-    if module.params['provision_listener_ip_address'] is True:
+
+    listener_ip_address = module.params['listener_ip_address']
+    if not(listener_ip_address and listener_ip_address.strip()):
         # Get addresses
         res = get_unallocated_public_ips(module, cp_driver, lb_driver,
                                          network_domain, True, 1)
         listener_ip_address = res['addresses'][0]
-    else:
-        listener_ip_address = module.params['listener_ip_address']
+
     try:
         balancer = lb_driver.create_balancer(
             module.params['name'],
@@ -234,19 +230,14 @@ def main():
             location=dict(required=True, type='str'),
             network_domain=dict(required=True, type='str'),
             name=dict(required=True, type='str'),
-            description=dict(default=None, type='str'),
             port=dict(default=None, type='int'),
             protocol=dict(default='http', choices=protocols),
             algorithm=dict(default='ROUND_ROBIN', choices=lb_algs),
             members=dict(default=None, type='list'),
             ensure=dict(default='present', choices=['present', 'absent']),
             verify_ssl_cert=dict(required=False, default=True, type='bool'),
-            listener_ip_address=dict(required=False, default=None, type='str'),
-            provision_listener_ip_address=dict(required=False, default=True,
-                                               type='bool')
+            listener_ip_address=dict(required=False, default=None, type='str')
         ),
-        mutually_exclusive=(["listener_ip_address",
-                             "provision_listener_ip_address"])
     )
 
     if not HAS_LIBCLOUD:

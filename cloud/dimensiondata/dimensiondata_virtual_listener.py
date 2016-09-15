@@ -18,7 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Authors:
-#   - Aimon Bustardo <aimon.bustardo@dimensiondata.com>
+#   - Jay Riddell <jay.riddell@dimensiondata.com>
 #
 from ansible.module_utils.basic import *
 from ansible.module_utils.dimensiondata import *
@@ -57,18 +57,16 @@ description:
   - Create or delete virtual listeners
 short_description: Create or delete virtual listeners
 version_added: 2.2
-author: 'Jay Riddell'
+author: 'Jay Riddell (@jr2730)'
 options:
   region:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -202,8 +200,8 @@ EXAMPLES = '''
         region: na
         location: NA12
         network_domain: my_network
-        pool_name: my_pool
         name: my_virtual_listener
+        pool_name: my_pool
         port: 80
         persis_prof_type: STANDARD
         persis_prof_protocol: SMTP
@@ -225,41 +223,37 @@ virtual_listener:
             description: Virtual Listener name.
             type: string
             sample: "My Virtual Listener"
-        ensure:
-            description: Virtual Listener ensure.
+        status:
+            description: state returned from libcloud.loadbalancer.types.State
             type: integer
             sample: 0
         ip:
             description: Listen VIP of Virtual Listener.
             type: string
             sample: 168.128.1.1
-        port:
-            description: Port of Virtual Listener listener.
-            type: integer
-            sample: 80
 '''
 
 
-def doesVirtCompatMatchTypeAndProtocol(vl_compat_list,
-                                       typeToMatch,
-                                       protocolToMatch):
+def does_virt_compat_match_type_and_protocol(vl_compat_list,
+                                             type_to_match,
+                                             protocol_to_match):
     retval = False
     if vl_compat_list is None or \
-       typeToMatch is None or \
-       protocolToMatch is None or \
+       type_to_match is None or \
+       protocol_to_match is None or \
        vl_compat_list.compatible_listeners is None:
         retval = False
     else:
-        up_protocolToMatch = protocolToMatch.upper()
+        up_protocol_to_match = protocol_to_match.upper()
         for vl_compat in vl_compat_list.compatible_listeners:
 
-            if vl_compat.type != typeToMatch:
+            if vl_compat.type != type_to_match:
                 retval = False
             else:
                 if vl_compat.protocol.upper() == 'ANY':
                     retval = True
                 else:
-                    retval = vl_compat.protocol.upper() == up_protocolToMatch
+                    retval = vl_compat.protocol.upper() == up_protocol_to_match
             if retval:
                 return True
 
@@ -296,34 +290,34 @@ def get_vl_given_name(lb_driver, name):
         return None
 
 
-def vl_obj_to_dict(vl_obj, isReallyBalancer):
+def vl_obj_to_dict(vl_obj, is_really_balancer):
     return {
-              'id': vl_obj.id,
-              'name': vl_obj.name,
-              'status': vl_obj.state if isReallyBalancer else vl_obj.status,
-              'ip': vl_obj.ip
-           }
+        'id': vl_obj.id,
+        'name': vl_obj.name,
+        'status': vl_obj.state if is_really_balancer else vl_obj.status,
+        'ip': vl_obj.ip
+    }
 
 
 # if this returns, then the validation passed
 # else it calls module.fail_json with an error
 # Allows for 2 different error messages
 # (to allow you to figure out which case was hit)
-def validateTypeAndProtocol(module,
-                            theType,
-                            theProtocol,
-                            theErrorMessage1,
-                            theErrorMessage2):
+def validate_type_and_protocol(module,
+                               the_type,
+                               the_protocol,
+                               the_error_message_1,
+                               the_error_message_2):
 
-    if (theType is None and theProtocol is not None) or \
-       (theType is not None and theProtocol is None):
-        module.fail_json(msg=theErrorMessage1)
+    if (the_type is None and the_protocol is not None) or \
+       (the_type is not None and the_protocol is None):
+        module.fail_json(msg=the_error_message_1)
 
     # AnsibleModule checked if protocol was in COMBINED list
     # now check if in particular list for the given listener
-    if theType is not None:
-        ppt = theType.upper()
-        ppp = theProtocol.upper()
+    if the_type is not None:
+        ppt = the_type.upper()
+        ppp = the_protocol.upper()
         aok = True
         if ppt == 'STANDARD':
             aok = (ppp in std_protocol_choices)
@@ -331,7 +325,7 @@ def validateTypeAndProtocol(module,
             # ppt is layer4
             aok = (ppp in perf4_protocol_choices)
             if not aok:
-                module.fail_json(msg=theErrorMessage2)
+                module.fail_json(msg=the_error_message_2)
 
 
 def create_virtual_listener(module,
@@ -366,17 +360,15 @@ def create_virtual_listener(module,
     for this_persis_prof in default_persis_profiles:
 
         # persis
-        if doesVirtCompatMatchTypeAndProtocol(this_persis_prof,
-                                              persis_prof_type,
-                                              persis_prof_protocol):
+        if does_virt_compat_match_type_and_protocol(this_persis_prof,
+           persis_prof_type, persis_prof_protocol):
             matched_persis = this_persis_prof
         else:
             # same prof cannot be both "regular" and fb
             # so if didn't match as "regularr", then attempt to match as FB
             if this_persis_prof.fallback_compatible:
-                if doesVirtCompatMatchTypeAndProtocol(this_persis_prof,
-                                                      fb_persis_prof_type,
-                                                      fb_persis_prof_protocol):
+                if does_virt_compat_match_type_and_protocol(this_persis_prof,
+                   fb_persis_prof_type, fb_persis_prof_protocol):
                     fb_matched_persis = this_persis_prof
 
     # now do mostly the same thing for iRules
@@ -385,9 +377,8 @@ def create_virtual_listener(module,
 
     for this_persis_prof in default_irules:
 
-        if doesVirtCompatMatchTypeAndProtocol(this_persis_prof,
-                                              irule_persis_prof_type,
-                                              irule_persis_prof_protocol):
+        if does_virt_compat_match_type_and_protocol(this_persis_prof,
+           irule_persis_prof_type, irule_persis_prof_protocol):
             irule_matched_persis = this_persis_prof
 
     # get the pool for the the given pool name
@@ -462,7 +453,7 @@ def main():
         ppp = persis_prof_protocol.upper()
 
     # want slightly different errors so I can tell why it failed
-    validateTypeAndProtocol(
+    validate_type_and_protocol(
         module,
         ppt,
         ppp,
@@ -480,7 +471,7 @@ def main():
     if fb_persis_prof_protocol is not None:
         fbppp = fb_persis_prof_protocol.upper()
 
-    validateTypeAndProtocol(
+    validate_type_and_protocol(
         module,
         fbppt,
         fbppp,
@@ -498,7 +489,7 @@ def main():
     if irule_persis_prof_protocol is not None:
         irppp = irule_persis_prof_protocol.upper()
 
-    validateTypeAndProtocol(
+    validate_type_and_protocol(
         module,
         irppt,
         irppp,
@@ -584,25 +575,25 @@ def main():
         if vl is None:
             # create it
             vl = create_virtual_listener(
-                        module,
-                        net_domain,
-                        name,
-                        ex_description,
-                        port,
-                        pool_name,
-                        lb_driver,
-                        cp_driver,
-                        listener_ip_address,
-                        ppt,
-                        ppp,
-                        fbppt,
-                        fbppp,
-                        irppt,
-                        irppp,
-                        protocol,
-                        connection_limit,
-                        connection_rate_limit,
-                        source_port_preservation)
+                module,
+                net_domain,
+                name,
+                ex_description,
+                port,
+                pool_name,
+                lb_driver,
+                cp_driver,
+                listener_ip_address,
+                ppt,
+                ppp,
+                fbppt,
+                fbppp,
+                irppt,
+                irppp,
+                protocol,
+                connection_limit,
+                connection_rate_limit,
+                source_port_preservation)
         else:
             module.exit_json(changed=False, msg="Virtual Listener already " +
                              "exists.", virtual_listener=vl_obj_to_dict(vl,

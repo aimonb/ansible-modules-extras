@@ -48,12 +48,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -75,12 +73,13 @@ options:
   ip:
     description:
         - Node IP address.
-    required: true
+    required: false
+    default: null
   connection_limit:
     description:
         - Maximum number of concurrent connections per second.
     required: false
-    default: 25000
+    default: 2000
   connection_rate_limit:
     description:
         - Maximum number of concuurrent sessions.
@@ -135,11 +134,11 @@ load_balancer_node:
         connection_limit:
             description: Maximum number of concurrent connections per second.
             type: integer
-            sample: 25000
+            sample: 2000
         connection_rate_limit:
             description: Maximum number of concurrent sessions.
             type: integer
-            sample: 2000
+            sample: 25000
         status:
             description: Node status.
             type: integer

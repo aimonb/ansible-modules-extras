@@ -43,7 +43,7 @@ lb_algs = ['ROUND_ROBIN', 'LEAST_CONNECTIONS',
 
 DOCUMENTATION = '''
 ---
-module: dimensiondata_locad_balancer_pool
+module: dimensiondata_load_balancer_pool
 description:
   - Create, update or delete .
 short_description: Create, update or delete load balancer pools.
@@ -54,12 +54,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -67,7 +65,7 @@ options:
     required: true
   network_domain:
     description:
-      - The target network name or ID.
+      - The target network name or target network ID.
     required: true
   name:
     description:
@@ -85,7 +83,7 @@ options:
     choices:
         - 'ROUND_ROBIN'
         - 'LEAST_CONNECTIONS'
-        - 'SHORTES_RESPONSE'
+        - 'SHORTEST_RESPONSE'
         - 'PERSISTENT_IP'
     default: ROUND_ROBIN
   health_monitor_1:
@@ -118,9 +116,11 @@ options:
     required: false
     default: null
   destroy_nodes:
-      description: Destroy nodes when removing members.
-      type: bool
-      default: true
+    description:
+      - Destroy nodes when removing members.
+    required: false
+    type: bool
+    default: true
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
@@ -157,7 +157,7 @@ EXAMPLES = '''
 - dimensiondata_load_balancer_pool:
     region: na
     location: NA5
-    network_domain: test_network
+    network_domain: 09bb085f-c1cb-5c59-aa1d-53b3d8be214c
     name: web_lb01_pool01
     load_balance_method: ROUND_ROBIN
     members:
@@ -381,7 +381,7 @@ def main():
                                      choices=lb_methods),
             health_monitor_1=dict(default=None, choices=monitor_methods),
             health_monitor_2=dict(default=None, choices=monitor_methods),
-            service_down_action=dict(default=None, choices=down_actions),
+            service_down_action=dict(default='NONE', choices=down_actions),
             slow_ramp_time=dict(required=False, default=30, type='int'),
             members=dict(required=False, default=None, type='dict'),
             destroy_nodes=dict(required=False, default=True, type='bool'),

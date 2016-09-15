@@ -36,25 +36,20 @@ dd_regions = get_dd_regions()
 DOCUMENTATION = '''
 ---
 module: dimensiondata_vlan
-short_description:
-    - Create, Read, Update or Delete VLANs.
-version_added: '2.1'
+short_description: Create, Read, Update or Delete VLANs.
+description:
+  - Create, Read, Update, Delete or Expand VLANs.
+version_added: "2.2"
 author: 'Aimon Bustardo (@aimonb)'
 options:
   region:
     description:
       - The target region.
-<<<<<<< fed22f85029ee5ffb0f62a2ef413a58183019d34:ansible/dimensiondata/dimensiondata_vlan.py
-    choices: %s
-=======
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
->>>>>>> Move to fit in ansible-modules-extras:cloud/dimensiondata/dimensiondata_vlan.py
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   location:
     description:
@@ -62,7 +57,7 @@ options:
     required: true
   name:
     description:
-      - The name of the VLAN.
+      - The name of the VLAN, required for 'create' action
     required: false
   description:
     description:
@@ -71,7 +66,7 @@ options:
     default: null
   network_domain:
     description:
-      - The target network.
+      - The network domain name of the target network.
     required: true
   private_ipv4_base_address:
     description:
@@ -83,19 +78,35 @@ options:
     required: false
   vlan_id:
     description:
-      - The VLAN ID, required for update action.
+      - The VLAN ID, required for 'update' and 'expand' action.
     required: false
   verify_ssl_cert:
     description:
       - Check that SSL certificate is valid.
     required: false
     default: true
+  wait:
+    description:
+      - Should we wait for the task to complete before moving onto the next.
+    required: false
+    default: false
+  wait_time:
+    description:
+      - Only applicable if wait is true.
+        This is the amount of time in seconds to wait
+    required: false
+    default: 600
+  wait_poll_interval:
+    description:
+      - The amount to time inbetween polling for task completion
+    required: false
+    default: 2
   action:
     description:
-      - create, read(get), update or delete.
-    choices: ['create', 'read', 'get', update', 'delete']
+      - create, read(get), update, delete or expand.
+    choices: [create, read, get, update, delete, expand]
     default: create
-''' % str(dd_regions)
+'''
 
 EXAMPLES = '''
 # Add VLAN
@@ -108,6 +119,7 @@ EXAMPLES = '''
     private_ipv4_base_address: 192.168.23.0
     private_ipv4_prefix_size: 24
     action: create
+    wait: yes
 # Read/Get a VLAN details
 - dimensiondata_vlan:
     region: na
@@ -115,6 +127,7 @@ EXAMPLES = '''
     network_domain: test_network
     name: my_vlan1
     action: read
+    wait: yes
 # Update a VLAN
 # VLAN ID is required to modify a VLAN.
 - dimensiondata_vlan:
@@ -125,6 +138,7 @@ EXAMPLES = '''
     name: my_vlan_1
     description: A test VLAN network, renamed.
     state: present
+    wait: yes
 # Delete a VLAN by name
 - dimensiondata_vlan:
     region: na
@@ -132,6 +146,7 @@ EXAMPLES = '''
     network_domain: test_network
     name: my_vlan_1
     action: delete
+    wait: no
 # Delete a VLAN by ID
 - dimensiondata_vlan:
     region: na
@@ -139,6 +154,7 @@ EXAMPLES = '''
     network_domain: test_network
     vlan_id: a2c6cccc-bbbb-aaaa-0000-000028bcc47c
     action: delete
+    wait: no
 '''
 
 RETURN = '''
@@ -171,13 +187,27 @@ vlan:
 
 
 def vlan_obj_to_dict(vlan):
-    vlan_dict = dict(id=vlan.id,
-                     name=vlan.name,
-                     description=vlan.description,
-                     location=vlan.location.id,
-                     status=vlan.status
-                     )
-    return vlan_dict
+    vlan_d = dict(id=vlan.id,
+                  name=vlan.name,
+                  description=vlan.description,
+                  location=vlan.location.id,
+                  private_ipv4_range_address=vlan.private_ipv4_range_address,
+                  private_ipv4_range_size=vlan.private_ipv4_range_size,
+                  status=vlan.status,
+                  )
+    return vlan_d
+
+
+def wait_for_vlan_state(module, driver, vlan_id, state_to_wait_for):
+    try:
+        return driver.connection.wait_for_state(
+            state_to_wait_for, driver.ex_get_vlan,
+            module.params['wait_poll_interval'],
+            module.params['wait_time'], vlan_id
+        )
+    except DimensionDataAPIException as e:
+        module.fail_json(msg='VLAN did not reach % state in time: %s'
+                         % (state, e.msg))
 
 
 def create_vlan(module, driver, location, network_domain, name, description,
@@ -185,11 +215,16 @@ def create_vlan(module, driver, location, network_domain, name, description,
     try:
         vlan = driver.ex_create_vlan(network_domain, name, base_address,
                                      description, prefix_size)
-        return vlan
     except DimensionDataAPIException as e:
         if e.code == 'NAME_NOT_UNIQUE':
-            return True
+            vlan = get_vlan(module, driver, location, network_domain, 'False',
+                            name)
+            return {'vlan': vlan, 'changed': False}
         module.fail_json(msg="Failed to create VLAN: %s" % e)
+    # Wait for it to become ready
+    if module.params['wait']:
+        vlan = wait_for_vlan_state(module, driver, vlan.id, 'NORMAL')
+    return {'vlan': vlan, 'changed': True}
 
 
 def get_vlan(module, driver, location, network_domain, vlan_id, name):
@@ -256,12 +291,14 @@ def expand_vlan(module, driver, location, network_domain, vlan_id, name,
     if type(vlan_obj) is dict:
         module.exit_json(changed=False, msg="VLAN not found.")
     else:
-        module.fail_json(msg=vlan_obj_to_dict(vlan_obj))
-        vlan_obj.private_ipv4_range_size = private_ipv4_range_size
-        try:
-            return ex_expend_vlan(vlan_obj)
-        except DimensionDataAPIException as e:
-            module.fail_json(msg="Failed to expand VLAN: %s" % e)
+        if vlan_obj.private_ipv4_range_size == private_ipv4_range_size:
+            return False
+        else:
+            vlan_obj.private_ipv4_range_size = private_ipv4_range_size
+            try:
+                return driver.ex_expand_vlan(vlan_obj)
+            except DimensionDataAPIException as e:
+                module.fail_json(msg="Failed to expand VLAN: %s" % e)
 
 
 def main():
@@ -276,8 +313,12 @@ def main():
             private_ipv4_base_address=dict(default=False, type='str'),
             private_ipv4_prefix_size=dict(default=False, type='str'),
             action=dict(default='create', choices=['create', 'read', 'get',
-                                                   'update', 'delete']),
-            verify_ssl_cert=dict(required=False, default=True, type='bool')
+                                                   'update', 'delete',
+                                                   'expand']),
+            verify_ssl_cert=dict(required=False, default=True, type='bool'),
+            wait=dict(required=False, default=False, type='bool'),
+            wait_time=dict(required=False, default=600, type='int'),
+            wait_poll_interval=dict(required=False, default=2, type='int')
         )
     )
 
@@ -292,7 +333,7 @@ def main():
     key = credentials['key']
     region = 'dd-%s' % module.params['region']
     location = module.params['location']
-    network_domain_id = module.params['network_domain']
+    network_domain_name = module.params['network_domain']
     name = module.params['name']
     vlan_id = module.params['vlan_id']
     description = module.params['description']
@@ -307,7 +348,7 @@ def main():
     driver = DimensionData(user_id, key, region=region)
 
     # Get Network Domain Object
-    network_domain = get_network_domain_by_name(driver, network_domain_id,
+    network_domain = get_network_domain_by_name(driver, network_domain_name,
                                                 location)
 
     # Process action
@@ -315,12 +356,12 @@ def main():
         if name is False:
             module.fail_json(msg="'name' is a required argument when action" +
                                  " is 'create'")
-        vlan_obj = create_vlan(module, driver, location, network_domain, name,
-                               description, base_address, prefix_size)
-        if vlan_obj is True:
+        res = create_vlan(module, driver, location, network_domain, name,
+                          description, base_address, prefix_size)
+        vlan = vlan_obj_to_dict(res['vlan'])
+        if res['changed'] is False:
             module.exit_json(changed=False, msg="VLAN with name '%s'" % name +
-                             "already exists.")
-        vlan = vlan_obj_to_dict(vlan_obj)
+                             "already exists.", vlan=vlan)
         module.exit_json(changed=True, msg="Successfully created VLAN.",
                          vlan=vlan)
     elif action == 'read' or action == 'get':
@@ -355,7 +396,11 @@ def main():
                              "expanding a VLAN")
         res = expand_vlan(module, driver, location, network_domain, vlan_id,
                           name, prefix_size)
-
+        if type(res) is bool:
+            module.exit_json(changed=False, msg="VLAN already requested size.")
+        else:
+            module.exit_json(changes=True, msg="VLAN network size modified.",
+                             vlan=vlan_obj_to_dict(res))
     else:
         fail_json(msg="Requested action was " +
                   "'%s'. Action must be one of 'create', 'read', " % state +

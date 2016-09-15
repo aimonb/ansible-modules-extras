@@ -1,66 +1,52 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# (c) 2016 Dimension Data All Rights Reserved.
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible. If not, see <http://www.gnu.org/licenses/>.
 
-from ansible.module_utils.basic import *
-<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
-from ansible.module_utils.dimensiondata import *
-=======
-from ansible.module_utils.dimensiondatacloud import *
->>>>>>> Fixes from review comments
-try:
-    from libcloud.common.dimensiondata import DimensionDataAPIException
-    from libcloud.backup.drivers.dimensiondata import DimensionDataBackupDriver
-    import libcloud.security
-    HAS_LIBCLOUD = True
-except:
-    HAS_LIBCLOUD = False
-import time
-
-<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
-# Get regions early to use in docs etc.
-dd_regions = get_dd_regions()
-
-=======
->>>>>>> Fixes from review comments
 DOCUMENTATION = '''
 ---
 module: dimensiondata_backup
 short_description: Enable or Disable backups for a host.
 description:
-    - Creates, enables/disables backups for a host in the Dimension Data Cloud.
-version_added: "1.9"
+  - Creates, enables/disables backups for a host in the Dimension Data Cloud.
+notes:
+  - Does not support check-mode.
+version_added: "2.2"
 options:
   state:
     description:
       - The state you want the hosts to be in.
     required: false
     default: present
-    aliases: []
-    choices: ['present', 'absent']
+    choices: [present, absent]
   node_ids:
     description:
       - A list of server ids to work on.
-    required: false
-    default: null
-    aliases: ['server_id', 'server_ids', 'node_id']
+    required: true
+    aliases: [server_id, server_ids, node_id]
   region:
     description:
       - The target region.
-<<<<<<< fed22f85029ee5ffb0f62a2ef413a58183019d34:ansible/dimensiondata/dimensiondata_backup.py
-<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
-    choices: %s
-=======
-    choices: ['na', 'eu', 'au', 'af', 'ap', 'latam', 'canada',
-              'canberra', 'id', 'in', 'il', 'sa']
->>>>>>> Fixes from review comments
-=======
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
->>>>>>> Move to fit in ansible-modules-extras:cloud/dimensiondata/dimensiondata_backup.py
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   service_plan:
     description:
@@ -85,16 +71,16 @@ options:
     default: 120
   wait_poll_interval:
     description:
-      - The amount to time inbetween polling for task completion
+      - The amount to time in between polling for task completion
     required: false
     default: 2
 
 author:
     - "Jeff Dunham (@jadunham1)"
-''' % str(dd_regions)
+'''
 
 EXAMPLES = '''
-# Note: These examples don't include authorization.
+# Note: These examples do not include authorization.
 # You can set these by exporting DIDATA_USER and DIDATA_PASSWORD vars:
 # export DIDATA_USER=<username>
 # export DIDATA_PASSWORD=<password>
@@ -119,21 +105,31 @@ EXAMPLES = '''
     wait: yes
     wait_time: 500
     service_plan: Advanced
-    verify_Sssl_cert: no
+    verify_ssl_cert: no
 '''
 
 RETURN = '''
 servers:
-    description: List of servers this worked on.
-    returned: Always
-    type: list
-    contains: node_ids processed
+  description: List of servers this worked on.
+  returned: Always
+  type: list
+  contains: node_ids processed
 '''
 
-<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
-=======
-POLLING_INTERVAL = 2
->>>>>>> Fixes from review comments
+from ansible.module_utils.basic import *
+from ansible.module_utils.dimensiondata import *
+try:
+    from libcloud.common.dimensiondata import DimensionDataAPIException
+    from libcloud.backup.drivers.dimensiondata import DimensionDataBackupDriver
+    import libcloud.security
+    HAS_LIBCLOUD = True
+except:
+    HAS_LIBCLOUD = False
+import time
+
+# Get regions early to use in docs etc.
+dd_regions = get_dd_regions()
+
 
 def handle_backups(module, client):
     changed = False
@@ -180,12 +176,8 @@ def enable_backup_for_server(client, module, server_id, service_plan):
         try:
             client.connection.wait_for_state(
                 'NORMAL', client.ex_get_backup_details_for_target,
-<<<<<<< bc1e26e5bfb870f7a3417379dc83392310595d5a
                 module.params['wait_poll_interval'],
                 module.params['wait_time'], server_id
-=======
-                POLLING_INTERVAL, module.params['wait_time'], server_id
->>>>>>> Fixes from review comments
             )
         except DimensionDataAPIException as e:
             module.fail_json(msg='Backup did not enable in time: %s' % e.msg)

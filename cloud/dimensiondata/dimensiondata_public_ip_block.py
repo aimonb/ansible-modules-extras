@@ -47,12 +47,10 @@ options:
     description:
       - The target region.
     choices:
-      - Regions are defined in Apache libcloud project
-        - file = libcloud/common/dimensiondata.py
-      - See https://libcloud.readthedocs.io/en/latest/
-        - ..    compute/drivers/dimensiondata.html
-      - Note that values avail in array dd_regions().
-      - Note that the default value of na = "North America"
+      - Regions choices are defined in Apache libcloud project [libcloud/common/dimensiondata.py]
+      - Regions choices are also listed in https://libcloud.readthedocs.io/en/latest/compute/drivers/dimensiondata.html
+      - Note that the region values are available as list from dd_regions().
+      - Note that the default value "na" stands for "North America".  The code prepends 'dd-' to the region choice.
     default: na
   network_domain:
     description:
@@ -64,20 +62,20 @@ options:
     required: true
   block_id:
     description:
-      - The first IP of the newtork block.
+      - The id of the network block.
       - This or base_ip is required when releasing existing block.
     required: false
     default: false
   base_ip:
     description:
-      - The first IP of the newtork block.
-      - This or block_id Required when releasing existing block.
+      - The first IP of the network block.
+      - This or block_id is required when releasing existing block.
     required: false
     default: false
   action:
     description:
       - Get, add or delete public IP blocks,
-    choices: [get, get_free, add, delete]
+    choices: [get, add, delete]
     required: true
   count:
     description:
