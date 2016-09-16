@@ -191,7 +191,7 @@ def handle_backup_client(module, client):
             server_clients_return[server_id] = \
                 _backup_client_obj_to_dict(backup_client)
         elif state == 'present' and backup_client is not None:
-            existing_service_plan = backup_details.sevice_plan
+            existing_service_plan = backup_details.service_plan
             modify_backup_for_server(
                 client, module, server_id, existing_service_plan)
             # needed? backup_details = get_backup_details_for_host(module, client, server_id)
