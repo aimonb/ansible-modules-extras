@@ -62,13 +62,13 @@ options:
     required: true
   block_id:
     description:
-      - The id of the network block.
+      - The id of the IP Address block.
       - This or base_ip is required when releasing existing block.
     required: false
     default: false
   base_ip:
     description:
-      - The first IP of the network block.
+      - The first IP address of the network block.
       - This or block_id is required when releasing existing block.
     required: false
     default: false
@@ -206,10 +206,13 @@ def main():
     # get the network domain object
     network_domain_obj = get_network_domain(driver, network_domain, location)
     if action == 'get':
-        block_dict = get_public_ip_block(driver, network_domain, block_id)
-        module.exit_json(changed=False,
-                         msg="Sucessfully retreived block details",
-                         public_ip_block=block_dict)
+        block = get_public_ip_block(module, driver, network_domain_obj,
+                                    block_id)
+        if block is not False:
+            module.exit_json(changed=False,
+                             msg="Sucessfully retreived block details",
+                             public_ip_block=module.params['block_id'])
+
     elif action == 'delete':
         delete_public_ip_block(module, driver, network_domain_obj, block_id,
                                base_ip)
